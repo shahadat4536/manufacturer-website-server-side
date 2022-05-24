@@ -45,6 +45,12 @@ async function run() {
     const userCollection = client
       .db("manufacturer-website")
       .collection("users");
+    const reviewCollection = client
+      .db("manufacturer-website")
+      .collection("reviews");
+    const orderCollection = client
+      .db("manufacturer-website")
+      .collection("orders");
 
     //-------------------parts get api start---------------------//
     app.get("/parts", verifyJWT, async (req, res) => {
@@ -78,22 +84,65 @@ async function run() {
     //-------------------admin data add put api start---------------------//
     app.put("/user/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      const filter = { email: email };
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: "admin" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
 
-      const updateDoc = {
-        $set: { role: "admin" },
-      };
-      const result = await userCollection.updateOne(filter, updateDoc);
-
-      res.send(result);
+        res.send(result);
+      } else {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
     });
     //-------------------admin data add put api end---------------------//
+    //-------------------admin data check get api start---------------------//
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
+    });
+    //-------------------admin data check get api end---------------------//
     //-------------------all users data get api start---------------------//
     app.get("/user", verifyJWT, async (req, res) => {
       const users = await userCollection.find().toArray();
       res.send(users);
     });
     //-------------------all users data get api end---------------------//
+    //-------------------review data post api start---------------------//
+
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+    //-------------------review data post api end---------------------//
+    //-------------------review data get api start---------------------//
+    app.get("/review", async (req, res) => {
+      const reviews = await reviewCollection.find().toArray();
+      res.send(reviews);
+    });
+    //-------------------review data get api end---------------------//
+    //-------------------order data post api start---------------------//
+    app.post("/orders", async (req, res) => {
+      const order = req.body;
+      const result = await orderCollection.insertOne(order);
+      res.send(result);
+    });
+    //-------------------order data post api end---------------------//
+    //-------------------Add products data post api end---------------------//
+    app.post("/parts", verifyJWT, async (req, res) => {
+      const parts = req.body;
+      const result = await partsCollection.insertOne(parts);
+      res.send(result);
+    });
+    //-------------------Add products data post api end---------------------//
   } finally {
   }
 }
