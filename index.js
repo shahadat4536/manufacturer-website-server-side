@@ -5,13 +5,16 @@ const cors = require("cors");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+// console.log(stripe);
 app.use(express.json());
 app.use(cors());
 //db_user_001
 //IIHNNxJNI5Ek5eM4
 // https://stark-cliffs-55109.herokuapp.com
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.7pr7e.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
+
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -51,6 +54,9 @@ async function run() {
     const orderCollection = client
       .db("manufacturer-website")
       .collection("orders");
+    const paymentCollection = client
+      .db("manufacturer-website")
+      .collection("payments");
 
     //-------------------parts get api start---------------------//
     app.get("/parts", verifyJWT, async (req, res) => {
@@ -143,6 +149,74 @@ async function run() {
       res.send(result);
     });
     //-------------------Add products data post api end---------------------//
+    //-------------------Update Available Quantity Put api start---------------------//
+    app.put("/order/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      console.log("id", id);
+      const filter = { _id: ObjectId(id) };
+      const quantity = req.body;
+      const options = { upsert: true };
+      console.log(quantity);
+      // const options = { upsert: true };
+      const updateDoc = {
+        $set: { availableQuantity: quantity.availableQuantity },
+      };
+      console.log("updateDoc", updateDoc);
+      const result = await orderCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      console.log(result);
+      res.send(result);
+    });
+    //-------------------Update Available Quantity Put api end---------------------//
+    //-------------------MyOrder get api start---------------------//
+    app.get("/order/:email", async (req, res) => {
+      const email = req.params;
+      const result = await orderCollection.find(email).toArray();
+      res.send(result);
+    });
+    //-------------------MyOrder  get api end---------------------//
+    //-------------------MyOrder 1 item get api start---------------------//
+    app.get("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await orderCollection.findOne(query);
+      res.send(result);
+    });
+    //-------------------MyOrder 1 item get api end---------------------//
+    //-------------------Payment Post  api start---------------------//
+    app.post("/create-payment-intent", async (req, res) => {
+      const order = req.body;
+      // console.log("jsdhahfdajkjhasjhkjkh", order);
+      const price = order.paymentAmount;
+      // console.log("shjahsdiAUs", price);
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({ clientSecret: paymentIntent.client_secret });
+    });
+    //-------------------Payment Post  api end---------------------//
+    //-------------------Payment patch  api start---------------------//
+    app.patch("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const payment = req.body;
+      const filter = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+      const result = await paymentCollection.insertOne(payment);
+      const updateOrders = await orderCollection.updateOne(filter, updateDoc);
+      res.send(updateDoc);
+    });
+    //-------------------Payment patch  api end---------------------//
   } finally {
   }
 }
