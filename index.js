@@ -152,22 +152,15 @@ async function run() {
     //-------------------Update Available Quantity Put api start---------------------//
     app.put("/order/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      console.log("id", id);
       const filter = { _id: ObjectId(id) };
       const quantity = req.body;
-      const options = { upsert: true };
-      console.log(quantity);
       // const options = { upsert: true };
       const updateDoc = {
         $set: { availableQuantity: quantity.availableQuantity },
       };
       console.log("updateDoc", updateDoc);
-      const result = await orderCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
-      console.log(result);
+      const result = await partsCollection.updateOne(filter, updateDoc);
+
       res.send(result);
     });
     //-------------------Update Available Quantity Put api end---------------------//
