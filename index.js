@@ -59,7 +59,7 @@ async function run() {
       .collection("payments");
 
     //-------------------parts get api start---------------------//
-    app.get("/parts", verifyJWT, async (req, res) => {
+    app.get("/parts", async (req, res) => {
       const parts = await partsCollection.find().toArray();
       res.send(parts);
     });
