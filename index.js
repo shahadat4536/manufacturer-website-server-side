@@ -186,6 +186,12 @@ async function run() {
       res.send(result);
     });
     //-------------------MyOrder 1 item get api end---------------------//
+    //-------------------all order data get api start---------------------//
+    app.get("/orders", async (req, res) => {
+      const orders = await orderCollection.find().toArray();
+      res.send(orders);
+    });
+    //-------------------all order data get api end---------------------//
     //-------------------Payment Post  api start---------------------//
     app.post("/create-payment-intent", async (req, res) => {
       const order = req.body;
@@ -209,6 +215,7 @@ async function run() {
       const updateDoc = {
         $set: {
           paid: true,
+          status: "pending",
           transactionId: payment.transactionId,
         },
       };
@@ -217,6 +224,20 @@ async function run() {
       res.send(updateDoc);
     });
     //-------------------Payment patch  api end---------------------//
+    //-------------------Order Shiped patch  api start---------------------//
+    app.put("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const status = req.body;
+      const updateDoc = {
+        $set: {
+          status: "shipped",
+        },
+      };
+      const updateStatus = await orderCollection.updateOne(filter, updateDoc);
+      res.send(updateStatus);
+    });
+    //-------------------Order Shiped patch  api end---------------------//
   } finally {
   }
 }
