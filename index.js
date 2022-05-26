@@ -246,6 +246,14 @@ async function run() {
       res.send(result);
     });
     //-------------------Order cancel delete  api end---------------------//
+    //-------------------admin  delete products  api start---------------------//
+    app.delete("/parts/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await partsCollection.deleteOne(filter);
+      res.send(result);
+    });
+    //-------------------admin  delete products  api end---------------------//
   } finally {
   }
 }
