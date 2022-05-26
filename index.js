@@ -254,6 +254,34 @@ async function run() {
       res.send(result);
     });
     //-------------------admin  delete products  api end---------------------//
+
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const updateData = req.body;
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          education: updateUserData.education,
+          location: updateUserData.location,
+          phone: updateUserData.phone,
+          linkedin: updateUserData.linkedin,
+        },
+      };
+      const updateUserinfo = await userCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
+      res.send(updateUserinfo);
+    });
   } finally {
   }
 }
