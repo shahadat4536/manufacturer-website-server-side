@@ -238,6 +238,14 @@ async function run() {
       res.send(updateStatus);
     });
     //-------------------Order Shiped patch  api end---------------------//
+    //-------------------Order cancel delete  api start---------------------//
+    app.delete("/order/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await orderCollection.deleteOne(filter);
+      res.send(result);
+    });
+    //-------------------Order cancel delete  api end---------------------//
   } finally {
   }
 }
